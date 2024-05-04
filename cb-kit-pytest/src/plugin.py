@@ -1,11 +1,9 @@
-import pytest
+import os
+
 from cloudbeat_common.models import CbConfig
-from cloudbeat_common.reporter import CbTestReporter
 
-from listener import CbTestListener
-from pytest_reporter import CbPyTestReporter
-
-print("--- cloudbeat_pytest")
+from cloudbeat_pytest.listener import CbTestListener
+from cloudbeat_pytest.pytest_reporter import CbPyTestReporter
 
 
 def pytest_addoption(parser):
@@ -20,7 +18,19 @@ def pytest_addoption(parser):
 
 
 def get_cb_config(config):
-    return CbConfig()
+    cb_config = CbConfig()
+    if os.environ.get("CB_AGENT") is not None and os.environ["CB_AGENT"] == "true":
+        cb_config.is_ready = True
+    cb_config.run_id = os.environ.get("CB_RUN_ID")
+    cb_config.instance_id = os.environ.get("CB_INSTANCE_ID")
+    cb_config.project_id = os.environ.get("CB_PROJECT_ID")
+    cb_config.api_endpoint_url = os.environ.get("CB_API_URL")
+    cb_config.api_token = os.environ.get("CB_API_KEY")
+    cb_config.selenium_url = os.environ.get("CB_SELENIUM_URL")
+    cb_config.appium_url = os.environ.get("CB_APPIUM_URL")
+    if os.environ.get("CB_BROWSER_NAME") is not None:
+        cb_config.capabilities["browserName"] = os.environ["CB_BROWSER_NAME"]
+    return cb_config
 
 
 def pytest_configure(config):
@@ -28,6 +38,8 @@ def pytest_configure(config):
     # if not config.option.cb_enabled:
     #    return
     cb_config: CbConfig = get_cb_config(config)
+    if not cb_config.is_ready:
+        return
     config.cb_reporter = CbPyTestReporter(cb_config)
     test_listener = CbTestListener(config)
     config.pluginmanager.register(test_listener, 'cloudbeat_listener')
@@ -38,25 +50,11 @@ def pytest_sessionstart(session):
         return
     reporter: CbPyTestReporter = session.config.cb_reporter
     reporter.start_instance()
-    # reporter.start_suite("default")
 
 
 def pytest_sessionfinish(session):
     if session.config.cb_reporter is None:
         return
     reporter: CbPyTestReporter = session.config.cb_reporter
-    # reporter.end_suite()
     reporter.end_instance()
 
-
-@pytest.fixture
-def hello(request):
-    if request.config.cb_enabled is None:
-        raise Exception("Sorry, no numbers below zero")
-
-    def _hello(name=None):
-        if not name:
-            name = request.config.getoption("name")
-        return "Hello {name}!".format(name=name)
-
-    return _hello

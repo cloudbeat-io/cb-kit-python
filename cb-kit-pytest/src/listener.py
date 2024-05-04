@@ -1,14 +1,12 @@
 import pytest
-from cloudbeat_common.reporter import CbTestReporter
 
-from pytest_reporter import CbPyTestReporter
+from cloudbeat_pytest.pytest_reporter import CbPyTestReporter
 
 
 class CbTestListener:
 
     def __init__(self, config):
         self.config = config
-        # self._reporter = CbReporter()
 
     @pytest.hookimpl(hookwrapper=True, tryfirst=True)
     def pytest_runtest_protocol(self, item):

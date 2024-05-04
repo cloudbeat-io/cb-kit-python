@@ -2,8 +2,8 @@ import threading
 from collections import OrderedDict, defaultdict
 import platform
 
-from models import TestResult, CbConfig, SuiteResult, CaseResult, StepResult
-from json_util import to_json
+from cloudbeat_common.models import TestResult, CbConfig, SuiteResult, CaseResult, StepResult
+from cloudbeat_common.json_util import to_json
 
 
 class ThreadContext:
@@ -76,7 +76,7 @@ class CbTestReporter:
         json_str = to_json(self._result)
 
         # Writing to sample.json
-        with open("CB_RESULT.json", "w") as outfile:
+        with open(".CB_TEST_RESULTS.json", "w") as outfile:
             outfile.write(json_str)
 
     def start_suite(self, name, fqn=None):

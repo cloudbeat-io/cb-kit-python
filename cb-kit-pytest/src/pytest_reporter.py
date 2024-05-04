@@ -2,7 +2,7 @@ from cloudbeat_common.reporter import CbTestReporter
 from cloudbeat_common.models import TestStatus
 from _pytest.nodes import Item
 from _pytest.reports import TestReport
-from helpers import get_module_details, get_test_details, calculate_status, get_description, get_test_parameters
+from cloudbeat_pytest.helpers import get_module_details, get_test_details, calculate_status, get_description, get_test_parameters
 
 
 class CbPyTestReporter(CbTestReporter):

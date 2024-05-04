@@ -1,6 +1,6 @@
 import json
 
-from models import TestResult, SuiteResult, CaseResult, StepResult
+from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult
 
 
 def to_json(result: TestResult):

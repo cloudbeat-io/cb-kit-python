@@ -25,6 +25,7 @@ class StepType:
 
 @attrs
 class CbConfig:
+    is_ready = attrib(default=False)
     run_id = attrib(default=None)
     run_group = attrib(default=None)
     instance_id = attrib(default=None)
