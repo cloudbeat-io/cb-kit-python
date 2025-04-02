@@ -1,9 +1,12 @@
 import os
 
+import pytest
 from cloudbeat_common.models import CbConfig
 
 from cloudbeat_pytest.listener import CbTestListener
 from cloudbeat_pytest.pytest_reporter import CbPyTestReporter
+
+from context import CbContext
 
 
 def pytest_addoption(parser):
@@ -58,3 +61,10 @@ def pytest_sessionfinish(session):
     reporter: CbPyTestReporter = session.config.cb_reporter
     reporter.end_instance()
 
+
+@pytest.fixture(scope="session")
+# instantiates ini file parses object
+def cbx(request) -> CbContext:
+    reporter = request.session.config.cb_reporter
+    context = CbContext.init(reporter)
+    return context

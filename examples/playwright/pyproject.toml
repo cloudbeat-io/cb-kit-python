@@ -1,0 +1,53 @@
+[build-system]
+requires = [
+  "setuptools>=61.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cb-examples-playwright"
+description = "CloudBeat Kit usage example for Playwright"
+version = "0.1.0"
+readme = "README.rst"
+requires-python = ">=3.8"
+authors = [
+    { name = "CloudBeat", email = "os@cloudbeat.io" },
+]
+maintainers = [
+    { name = "CloudBeat", email = "os@cloudbeat.io" },
+]
+license = {file = "LICENSE"}
+dependencies = [
+    "pytest>=6.2.0",
+]
+
+
+[tool.isort]
+profile = "black"
+skip = ["env", "venv"]
+
+[tool.pytest.ini_options]
+addopts = [
+  "--clean-alluredir",
+  "--alluredir=allure-results",
+  "--allure-link-pattern",
+  "issue:https://{}",
+  "--allure-link-pattern",
+  "link:https://{}",
+  "--allure-link-pattern",
+  "tms:https://{}",
+  "-ra",
+  "--color=yes",
+  "--browser-channel=chrome",
+  "--headed",
+  "--video=retain-on-failure",
+  "--tracing=retain-on-failure"
+]
+base_url = 'https://www.saucedemo.com/'
+log_cli = true
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_level = "INFO"
+markers = [
+  "devRun: marks tests that run before merge to the main branch"
+]

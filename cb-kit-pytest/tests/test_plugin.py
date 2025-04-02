@@ -1,5 +1,6 @@
 import pytest
-
+import sys
+import cloudbeat_playwright
 
 class TestExample:
     @pytest.fixture(autouse=True)
@@ -39,12 +40,13 @@ class TestExample:
         # check that all 4 tests passed
         result.assert_outcomes(passed=1)
 
-    def test_hello_world(self, hello):
+    def test_hello_world(self, hello, cbx):
         print("Hello World")
         assert hello() == "Hello World!"
 
     @pytest.mark.regression
-    def test_example2(self, ):
+    def test_example2(self, cbx):
+        cbx.pw.hello("ups")
         """This is test_example2 test item."""
         assert 1 == 1
 

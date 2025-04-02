@@ -1,11 +1,10 @@
 import os
 from setuptools import setup
 
-PACKAGE = "cloudbeat-pytest"
+PACKAGE = "cloudbeat-playwright"
 
 classifiers = [
     'Development Status :: 5 - Production/Stable',
-    'Framework :: Pytest',
     'Intended Audience :: Developers',
     'License :: OSI Approved :: Apache Software License',
     'Topic :: Software Development :: Quality Assurance',
@@ -20,24 +19,11 @@ classifiers = [
     'Programming Language :: Python :: 3.12',
 ]
 
-setup_requires = [
-    "setuptools_scm"
-]
-
 install_requires = [
     "attrs>=16.0.0",
     "pluggy>=0.4.0",
-    "cloudbeat_common",
-    "cloudbeat_playwright"
+    "cloudbeat_common"
 ]
-
-
-def prepare_version():
-    from setuptools_scm import get_version
-    configuration = {"root": "..", "relative_to": __file__}
-    version = get_version(**configuration)
-    install_requires.append(f"cloudbeat_common=={version}")
-    return configuration
 
 
 def get_readme(fname):
@@ -47,10 +33,9 @@ def get_readme(fname):
 def main():
     setup(
         name=PACKAGE,
-        use_scm_version=prepare_version,
-        setup_requires=setup_requires,
-        install_requires=install_requires,
-        description="CloudBeat Pytest Kit",
+        use_scm_version={"root": "..", "relative_to": __file__},
+        setup_requires=['setuptools_scm'],
+        description="Playwright wrapper that boosts Playwright tests reporting capabilities in CloudBeat",
         url="https://cloudbeat.io/",
         project_urls={
             "Source": "https://github.com/cloudbeat-io/cb-kit-python",
@@ -59,13 +44,13 @@ def main():
         author_email="info@cloudbeat.io",
         license="Apache-2.0",
         classifiers=classifiers,
-        keywords="cloudbeat testing reporting python pytest",
+        keywords="cloudbeat testing reporting python",
         #        long_description=get_readme("README.md"),
         long_description_content_type="text/markdown",
-        packages=["cloudbeat_pytest"],
-        package_dir={"cloudbeat_pytest": 'src'},
-        entry_points={"pytest11": ["cloudbeat_pytest = cloudbeat_pytest.plugin"]},
-        py_modules=['cloudbeat_pytest'],
+        packages=["cloudbeat_playwright"],
+        package_dir={"cloudbeat_playwright": 'src'},
+        install_requires=install_requires,
+        py_modules=['cloudbeat_playwright'],
         python_requires='>=3.6'
     )
 
