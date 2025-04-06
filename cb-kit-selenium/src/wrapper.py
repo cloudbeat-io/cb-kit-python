@@ -2,7 +2,7 @@ from cloudbeat_common.reporter import CbTestReporter
 from selenium import webdriver
 from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriver
 
-from listener import CbWebDriverListener
+from cloudbeat_selenium.listener import CbWebDriverListener
 
 class CbSeleniumWrapper:
     def __init__(self, reporter: CbTestReporter):

@@ -6,7 +6,7 @@ from cloudbeat_common.models import CbConfig
 from cloudbeat_pytest.listener import CbTestListener
 from cloudbeat_pytest.pytest_reporter import CbPyTestReporter
 
-from context import CbContext
+from cloudbeat_pytest.context import CbContext
 
 
 def pytest_addoption(parser):

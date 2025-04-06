@@ -27,8 +27,7 @@ setup_requires = [
 install_requires = [
     "attrs>=16.0.0",
     "pluggy>=0.4.0",
-    "cloudbeat_common",
-    "cloudbeat_playwright"
+    "cloudbeat_common"
 ]
 
 
