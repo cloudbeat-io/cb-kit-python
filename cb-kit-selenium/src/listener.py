@@ -16,9 +16,11 @@ class CbWebDriverListener(AbstractEventListener):
         self._reporter.end_step()
 
     def before_click(self, element, driver):
+        self._reporter.start_step(f"Click on \"{element}\"")
         print(f"Before clicking on element: {element.tag_name}")
 
     def after_click(self, element, driver):
+        self._reporter.end_step()
         print(f"After clicking on element: {element.tag_name}")
 
     def before_find(self, by, value, driver) -> None:
