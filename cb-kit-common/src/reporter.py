@@ -106,12 +106,12 @@ class CbTestReporter:
         self._context["case"] = case_result
         return case_result
 
-    def end_case(self, status=None):
+    def end_case(self, status=None, failure=None):
         case_result: CaseResult = self._context["case"] if "case" in self._context else None
         if case_result is None:
             return None
         # TODO: end started steps of the case
-        case_result.end(status)
+        case_result.end(status, failure)
         return case_result
 
     def start_case_hook(self, name):

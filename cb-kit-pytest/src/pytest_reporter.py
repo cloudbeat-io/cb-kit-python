@@ -2,7 +2,7 @@ from cloudbeat_common.reporter import CbTestReporter
 from cloudbeat_common.models import TestStatus
 from _pytest.nodes import Item
 from _pytest.reports import TestReport
-from cloudbeat_pytest.helpers import get_module_details, get_test_details, calculate_status, get_description, get_test_parameters
+from cloudbeat_pytest.helpers import get_module_details, get_test_details, calculate_status, get_failure_from_test_report, get_description, get_test_parameters
 
 
 class CbPyTestReporter(CbTestReporter):
@@ -50,4 +50,5 @@ class CbPyTestReporter(CbTestReporter):
 
     def end_call(self, item: Item, result: TestReport):
         status = calculate_status(result)
-        CbTestReporter.end_case(self, status)
+        failure = get_failure_from_test_report(result)
+        CbTestReporter.end_case(self, status, failure)

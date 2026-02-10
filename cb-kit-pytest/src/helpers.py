@@ -5,7 +5,7 @@ from _pytest.doctest import DoctestItem
 from _pytest.nodes import Item
 from _pytest.python import Class, Function, Module
 from _pytest.reports import TestReport
-from cloudbeat_common.models import TestStatus
+from cloudbeat_common.models import TestStatus, FailureResult
 
 
 def get_module_details(item: Item):
@@ -36,6 +36,31 @@ def calculate_status(result: TestReport):
     elif result.failed:
         return TestStatus.FAILED
     return TestStatus.PASSED
+
+
+def get_failure_from_test_report(result: TestReport):
+    if not result.failed:
+        return None
+
+    failure = FailureResult()
+
+    if result.longrepr is not None:
+        # longrepr can be an ExceptionRepr (with reprcrash/reprtraceback) or a plain string
+        if hasattr(result.longrepr, 'reprcrash') and result.longrepr.reprcrash is not None:
+            crash = result.longrepr.reprcrash
+            crash_message = crash.message or ''
+            # reprcrash.message format is typically "ExceptionType: message details"
+            if ':' in crash_message:
+                failure.type = crash_message.split(':', 1)[0].strip()
+                failure.message = crash_message.split(':', 1)[1].strip()
+            else:
+                failure.type = crash_message
+                failure.message = crash_message
+            failure.location = f"{crash.path}:{crash.lineno}"
+
+        failure.stacktrace = result.longreprtext
+
+    return failure
 
 
 def get_description(item):

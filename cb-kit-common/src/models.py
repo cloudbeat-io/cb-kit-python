@@ -96,6 +96,7 @@ class TestableResultBase:
     attachments = attrib(default=Factory(list))
     arguments = attrib(default=Factory(list))
     hooks = attrib(default=Factory(list))
+    failure = attrib(default=None)
     start_time = attrib(default=None)
     end_time = attrib(default=None)
     duration = attrib(default=None)
@@ -152,7 +153,7 @@ class CaseResult(TestableResultBase):
         self.fqn = fqn
         self.start_time = int(time.time() * 1000)
 
-    def end(self, status=None):
+    def end(self, status=None, failure=None):
         # End all unfinished steps
         for _ in range(len(self._started_steps_stack)):
             step_result = self._started_steps_stack.pop()
@@ -162,6 +163,7 @@ class CaseResult(TestableResultBase):
             self.status = status
         self.end_time = int(time.time() * 1000)
         self.duration = self.end_time - self.start_time
+        self.failure = failure
 
     def start_hook(self, name):
         hook_result = StepResult()
@@ -210,3 +212,15 @@ class CaseResult(TestableResultBase):
     def add_parameters(self, parameters):
         # TODO: merge with the existing parameters
         self.context["params"] = parameters
+
+@attrs
+class FailureResult:
+    type = attrib(default=None)
+    sub_type = attrib(default=None)
+    message = attrib(default=None)
+    reason = attrib(default=None)
+    data = attrib(default=None)
+    location = attrib(default=None)
+    stacktrace = attrib(default=None)
+    is_fatal = attrib(default=False)
+

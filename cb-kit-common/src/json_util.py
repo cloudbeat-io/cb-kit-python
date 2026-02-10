@@ -1,6 +1,6 @@
 import json
 
-from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult
+from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult, FailureResult
 
 
 def to_json(result: TestResult):
@@ -55,6 +55,7 @@ def _case_result_to_json(r: CaseResult):
         "status": r.status,
         "context": r.context,
         "arguments": r.arguments,
+        "failure": _failure_result_to_json(r.failure),
         "steps": list(map(lambda s: _step_result_to_json(s), r.steps)),
         "hooks": list(map(lambda s: _step_result_to_json(s), r.hooks))
     }
@@ -72,6 +73,18 @@ def _step_result_to_json(r: StepResult):
         "duration": r.duration,
         "status": r.status,
         "steps": list(map(lambda s: _step_result_to_json(s), r.steps))
+    }
+
+def _failure_result_to_json(f: FailureResult):
+    if not isinstance(f, FailureResult):
+        return None
+    return {
+        "type": f.type,
+        "sub_type": f.sub_type,
+        "message": f.message,
+        "stacktrace": f.stacktrace,
+        "location": f.location,
+        "is_fatal": f.is_fatal
     }
 
 
