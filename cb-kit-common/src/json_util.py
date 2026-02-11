@@ -40,24 +40,24 @@ def _suite_result_to_json(r: SuiteResult):
     }
 
 
-def _case_result_to_json(r: CaseResult):
-    if not isinstance(r, CaseResult):
+def _case_result_to_json(c: CaseResult):
+    if not isinstance(c, CaseResult):
         return None
     return {
-        "id": r.id,
-        "name": r.name,
-        "display_name": r.display_name,
-        "description": r.description,
-        "fqn": r.fqn,
-        "startTime": r.start_time,
-        "endTime": r.end_time,
-        "duration": r.duration,
-        "status": r.status,
-        "context": r.context,
-        "arguments": r.arguments,
-        "failure": _failure_result_to_json(r.failure),
-        "steps": list(map(lambda s: _step_result_to_json(s), r.steps)),
-        "hooks": list(map(lambda s: _step_result_to_json(s), r.hooks))
+        "id": c.id,
+        "name": c.name,
+        "display_name": c.display_name,
+        "description": c.description,
+        "fqn": c.fqn,
+        "startTime": c.start_time,
+        "endTime": c.end_time,
+        "duration": c.duration,
+        "status": c.status,
+        "context": c.context,
+        "arguments": c.arguments,
+        "failure": _failure_result_to_json(c.failure),
+        "steps": list(map(lambda s: _step_result_to_json(s), c.steps)),
+        "hooks": list(map(lambda s: _step_result_to_json(s), c.hooks))
     }
 
 

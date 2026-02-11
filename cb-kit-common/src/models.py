@@ -163,7 +163,9 @@ class CaseResult(TestableResultBase):
             self.status = status
         self.end_time = int(time.time() * 1000)
         self.duration = self.end_time - self.start_time
-        self.failure = failure
+        # Do not overwrite failure if already set (e.g. by end_call)
+        if failure is not None:
+            self.failure = failure
 
     def start_hook(self, name):
         hook_result = StepResult()

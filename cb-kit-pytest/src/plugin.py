@@ -43,12 +43,14 @@ def pytest_configure(config):
     cb_config: CbConfig = get_cb_config(config)
     if not cb_config.is_ready:
         return
+    print("--- pytest_configure-ready")
     config.cb_reporter = CbPyTestReporter(cb_config)
     test_listener = CbTestListener(config)
     config.pluginmanager.register(test_listener, 'cloudbeat_listener')
 
 
 def pytest_sessionstart(session):
+    print("--- pytest_sessionstart")
     if session.config.cb_reporter is None:
         return
     reporter: CbPyTestReporter = session.config.cb_reporter
@@ -56,6 +58,7 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session):
+    print("--- pytest_sessionfinish")
     if session.config.cb_reporter is None:
         return
     reporter: CbPyTestReporter = session.config.cb_reporter
