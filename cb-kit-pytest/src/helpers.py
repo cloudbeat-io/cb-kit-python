@@ -52,18 +52,20 @@ def get_failure_from_test_report(result: TestReport):
             # reprcrash.message format is typically "ExceptionType: message details"
             # but for assertion errors, it's just "assert ..." without the type prefix
             if ':' in crash_message:
-                failure.type = crash_message.split(':', 1)[0].strip()
+                exc_name = crash_message.split(':', 1)[0].strip()
                 failure.message = crash_message.split(':', 1)[1].strip()
             else:
                 failure.message = crash_message
                 # Extract exception type from last line of longreprtext
                 # Format: "path:lineno: ExceptionType"
                 last_line = result.longreprtext.strip().rsplit('\n', 1)[-1]
-                exc_type = last_line.rsplit(': ', 1)[-1] if ': ' in last_line else crash_message
-                failure.type = exc_type
+                exc_name = last_line.rsplit(': ', 1)[-1] if ': ' in last_line else crash_message
+            failure.sub_type = exc_name
+            failure.type = 'ASSERT_ERROR' if 'AssertionError' in exc_name else 'GENERAL_ERROR'
             failure.location = f"{crash.path}:{crash.lineno}"
 
         failure.stacktrace = result.longreprtext
+        failure.is_fatal = True
 
     return failure
 
