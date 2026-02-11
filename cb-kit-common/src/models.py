@@ -1,10 +1,12 @@
 import time
-from typing import List
+from typing import List, Optional
 
 from attr import attrs, attrib
 from attr import Factory
 from collections import OrderedDict, defaultdict
 import uuid
+
+from cloudbeat_common.helpers import get_failure_from_exception
 
 
 class TestStatus:
@@ -128,6 +130,7 @@ class SuiteResult(TestableResultBase):
 @attrs
 class StepResult(TestableResultBase):
     type: StepType = attrib(default=None)
+    screenshot: str = attrib(default=None)
     steps = attrib(default=Factory(list))
     logs = attrib(default=Factory(list))
 
@@ -136,10 +139,12 @@ class StepResult(TestableResultBase):
         self.fqn = fqn
         self.start_time = int(time.time() * 1000)
 
-    def end(self, status=TestStatus.PASSED):
+    def end(self, status=TestStatus.PASSED, exception: Optional[Exception] = None):
         self.end_time = int(time.time() * 1000)
         self.duration = self.end_time - self.start_time
         self.status = status if status is not None else TestStatus.PASSED
+        if exception is not None:
+            self.failure = get_failure_from_exception(exception)
 
 
 @attrs
@@ -154,10 +159,12 @@ class CaseResult(TestableResultBase):
         self.start_time = int(time.time() * 1000)
 
     def end(self, status=None, failure=None):
-        # End all unfinished steps
+        # End all unfinished steps — mark them as FAILED if the case itself failed
+        is_failed = status == TestStatus.FAILED or self.status == TestStatus.FAILED
+        unfinished_status = TestStatus.FAILED if is_failed else None
         for _ in range(len(self._started_steps_stack)):
             step_result = self._started_steps_stack.pop()
-            step_result.end()
+            step_result.end(unfinished_status)
         # Do not override the calculated FAILED status by the status function argument
         if status is not None and self.status != TestStatus.FAILED:
             self.status = status
@@ -201,15 +208,16 @@ class CaseResult(TestableResultBase):
         self._started_steps_stack.append(step_result)
         return step_result
 
-    def end_step(self, status=TestStatus.PASSED):
+    def end_step(self, status=TestStatus.PASSED, exception=None):
         if len(self._started_steps_stack) == 0 or len(self.steps) == 0:
             return None
         last_step = self._started_steps_stack.pop() \
             if len(self._started_steps_stack) > 0 else self.steps[len(self.steps) - 1]
-        last_step.end(status)
+        last_step.end(status, exception)
         if status == TestStatus.FAILED:
             self.status = TestStatus.FAILED
         return last_step
+
 
     def add_parameters(self, parameters):
         # TODO: merge with the existing parameters

@@ -133,11 +133,11 @@ class CbTestReporter:
         step_result = case_result.start_step(name, fqn)
         return step_result
 
-    def end_step(self):
+    def end_step(self, status=None, exception=None):
         if self._context["case"] is None:
             return None
         case_result: CaseResult = self._context["case"]
-        return case_result.end_step()
+        return case_result.end_step(status, exception)
 
     def _add_system_attributes(self):
         self._result.test_attributes["agent.hostname"] = platform.node()

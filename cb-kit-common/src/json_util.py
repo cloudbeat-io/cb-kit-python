@@ -61,18 +61,20 @@ def _case_result_to_json(c: CaseResult):
     }
 
 
-def _step_result_to_json(r: StepResult):
-    if not isinstance(r, StepResult):
+def _step_result_to_json(s: StepResult):
+    if not isinstance(s, StepResult):
         return None
     return {
-        "id": r.id,
-        "name": r.name,
-        "fqn": r.fqn,
-        "startTime": r.start_time,
-        "endTime": r.end_time,
-        "duration": r.duration,
-        "status": r.status,
-        "steps": list(map(lambda s: _step_result_to_json(s), r.steps))
+        "id": s.id,
+        "name": s.name,
+        "fqn": s.fqn,
+        "startTime": s.start_time,
+        "endTime": s.end_time,
+        "duration": s.duration,
+        "status": s.status,
+        "screenShot": s.screenshot,
+        "failure": _failure_result_to_json(s.failure),
+        "steps": list(map(lambda sub_step: _step_result_to_json(sub_step), s.steps))
     }
 
 def _failure_result_to_json(f: FailureResult):
