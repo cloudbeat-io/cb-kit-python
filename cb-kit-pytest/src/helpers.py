@@ -1,3 +1,4 @@
+import re
 import sys
 from itertools import chain, islice
 
@@ -5,6 +6,7 @@ from _pytest.doctest import DoctestItem
 from _pytest.nodes import Item
 from _pytest.python import Class, Function, Module
 from _pytest.reports import TestReport
+from cloudbeat_common.helpers import _clean_exception_message
 from cloudbeat_common.models import TestStatus, FailureResult
 
 
@@ -53,16 +55,29 @@ def get_failure_from_test_report(result: TestReport):
             # but for assertion errors, it's just "assert ..." without the type prefix
             if ':' in crash_message:
                 exc_name = crash_message.split(':', 1)[0].strip()
-                failure.message = crash_message.split(':', 1)[1].strip()
+                failure.message = _clean_exception_message(crash_message.split(':', 1)[1])
             else:
-                failure.message = crash_message
+                failure.message = _clean_exception_message(crash_message)
                 # Extract exception type from last line of longreprtext
                 # Format: "path:lineno: ExceptionType"
                 last_line = result.longreprtext.strip().rsplit('\n', 1)[-1]
                 exc_name = last_line.rsplit(': ', 1)[-1] if ': ' in last_line else crash_message
-            failure.sub_type = exc_name
-            failure.type = 'ASSERT_ERROR' if 'AssertionError' in exc_name else 'GENERAL_ERROR'
+            if exc_name.startswith('selenium.common.exceptions.'):
+                failure.sub_type = exc_name[len('selenium.common.exceptions.'):]
+                failure.type = 'SELENIUM_ERROR'
+            elif 'AssertionError' in exc_name:
+                failure.sub_type = exc_name
+                failure.type = 'ASSERT_ERROR'
+            else:
+                failure.sub_type = exc_name
+                failure.type = 'GENERAL_ERROR'
+            # Parse longreprtext to find the deepest frame in user code
+            # Lines follow the pattern: "path/to/file.py:lineno: ..."
             failure.location = f"{crash.path}:{crash.lineno}"
+            for match in re.finditer(r'^(\S+?):(\d+):', result.longreprtext, re.MULTILINE):
+                path = match.group(1)
+                if 'site-packages' not in path and not path.startswith('<'):
+                    failure.location = f"{path}:{match.group(2)}"
 
         failure.stacktrace = result.longreprtext
         failure.is_fatal = True

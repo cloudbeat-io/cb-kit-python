@@ -8,9 +8,15 @@ def get_failure_from_exception(exception: Optional[Exception]):
 
     from cloudbeat_common.models import FailureResult
     failure = FailureResult()
+    exc_module = getattr(exception.__class__, '__module__', '') or ''
     failure.sub_type = exception.__class__.__name__
-    failure.type = 'ASSERT_ERROR' if 'AssertionError' in failure.sub_type else 'GENERAL_ERROR'
-    failure.message = str(exception) if str(exception) else None
+    if exc_module.startswith('selenium.common.exceptions'):
+        failure.type = 'SELENIUM_ERROR'
+    elif 'AssertionError' in failure.sub_type:
+        failure.type = 'ASSERT_ERROR'
+    else:
+        failure.type = 'GENERAL_ERROR'
+    failure.message = _clean_exception_message(str(exception))
     failure.is_fatal = True
 
     tb = exception.__traceback__
@@ -26,3 +32,18 @@ def get_failure_from_exception(exception: Optional[Exception]):
             frame = frame.tb_next
 
     return failure
+
+
+def _clean_exception_message(message: str) -> Optional[str]:
+    """Extract only the human-readable message, stripping Selenium/driver noise."""
+    if not message:
+        return None
+    # Remove everything from "Stacktrace:" onwards
+    idx = message.find('Stacktrace:')
+    if idx != -1:
+        message = message[:idx]
+    # Remove Selenium's "Message:" prefix
+    message = message.strip()
+    if message.startswith('Message:'):
+        message = message[len('Message:'):].strip()
+    return message if message else None
