@@ -50,6 +50,7 @@ class ThreadContext:
 
 
 class CbTestReporter:
+    _instance: 'CbTestReporter' = None
     _result: TestResult = None
     _config: CbConfig = None
 
@@ -57,7 +58,12 @@ class CbTestReporter:
         self._context = ThreadContext()
         self._config = config
 
+    @classmethod
+    def get_instance(cls) -> 'CbTestReporter':
+        return cls._instance
+
     def start_instance(self):
+        CbTestReporter._instance = self
         self._result = TestResult()
         self._result.start(
             self._config.run_id,
@@ -69,6 +75,7 @@ class CbTestReporter:
         self._add_system_attributes()
 
     def end_instance(self) -> None:
+        CbTestReporter._instance = None
         if self._result is None:
             return
         self._result.end()

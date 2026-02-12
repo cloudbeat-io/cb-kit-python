@@ -149,9 +149,9 @@ class StepResult(TestableResultBase):
 
 @attrs
 class CaseResult(TestableResultBase):
-    context = defaultdict(OrderedDict)
+    context = attrib(default=Factory(lambda: defaultdict(OrderedDict)))
     steps = attrib(default=Factory(list))
-    _started_steps_stack: List[StepResult] = []
+    _started_steps_stack: List[StepResult] = attrib(default=Factory(list))
 
     def start(self, name, fqn=None):
         self.name = name
