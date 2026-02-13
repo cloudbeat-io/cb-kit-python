@@ -30,7 +30,6 @@ class CbContext:
     def init(reporter: CbPyTestReporter):
         if not CbContext.instance:
             CbContext.instance = CbContext.__CbContext(reporter)
-            print(sys.modules)
             if "cloudbeat_playwright" in sys.modules:
                 pw_module = importlib.import_module(".wrapper", "cloudbeat_playwright")
                 pw_wrapper_class = getattr(pw_module, "CbPlaywrightWrapper")

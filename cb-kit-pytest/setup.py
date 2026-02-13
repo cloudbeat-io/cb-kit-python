@@ -12,12 +12,6 @@ classifiers = [
     'Topic :: Software Development :: Testing',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
 ]
 
 setup_requires = [
@@ -25,8 +19,6 @@ setup_requires = [
 ]
 
 install_requires = [
-    "attrs>=16.0.0",
-    "pluggy>=0.4.0",
     "cloudbeat_common"
 ]
 
@@ -50,7 +42,7 @@ def main():
         setup_requires=setup_requires,
         install_requires=install_requires,
         description="CloudBeat Pytest Kit",
-        url="https://cloudbeat.io/",
+        url="https://cloudbeat.io",
         project_urls={
             "Source": "https://github.com/cloudbeat-io/cb-kit-python",
         },
@@ -65,7 +57,7 @@ def main():
         package_dir={"cloudbeat_pytest": 'src'},
         entry_points={"pytest11": ["cloudbeat_pytest = cloudbeat_pytest.plugin"]},
         py_modules=['cloudbeat_pytest'],
-        python_requires='>=3.6'
+        python_requires='>=3.8'
     )
 
 

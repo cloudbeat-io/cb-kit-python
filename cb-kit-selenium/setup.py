@@ -11,17 +11,9 @@ classifiers = [
     'Topic :: Software Development :: Testing',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
 ]
 
 install_requires = [
-    "attrs>=16.0.0",
-    "pluggy>=0.4.0",
     "cloudbeat_common"
 ]
 
@@ -36,7 +28,7 @@ def main():
         use_scm_version={"root": "..", "relative_to": __file__},
         setup_requires=['setuptools_scm'],
         description="Selenium wrapper for CloudBeat Pytest Kit",
-        url="https://cloudbeat.io/",
+        url="https://cloudbeat.io",
         project_urls={
             "Source": "https://github.com/cloudbeat-io/cb-kit-python",
         },
@@ -51,7 +43,7 @@ def main():
         package_dir={"cloudbeat_selenium": 'src'},
         install_requires=install_requires,
         py_modules=['cloudbeat_selenium'],
-        python_requires='>=3.6'
+        python_requires='>=3.8'
     )
 
 
