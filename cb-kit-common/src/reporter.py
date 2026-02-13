@@ -97,24 +97,24 @@ class CbTestReporter:
         return suite_result
 
     def end_suite(self):
-        if self._context["suite"] is None:
+        suite_result: SuiteResult = self._context.get("suite")
+        if suite_result is None:
             return None
-        suite_result: SuiteResult = self._context["suite"]
         suite_result.end()
         return suite_result
 
     def start_case(self, name, fqn=None):
-        if self._context["suite"] is None:
+        suite_result: SuiteResult = self._context.get("suite")
+        if suite_result is None:
             return None
         case_result = CaseResult()
         case_result.start(name, fqn)
-        suite_result: SuiteResult = self._context["suite"]
         suite_result.add_case(case_result)
         self._context["case"] = case_result
         return case_result
 
     def end_case(self, status=None, failure=None):
-        case_result: CaseResult = self._context["case"] if "case" in self._context else None
+        case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
         # TODO: end started steps of the case
@@ -122,28 +122,28 @@ class CbTestReporter:
         return case_result
 
     def start_case_hook(self, name):
-        case_result: CaseResult = self._context["case"] if "case" in self._context else None
+        case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
         return case_result.start_hook(name)
 
     def end_case_hook(self, status=None):
-        case_result: CaseResult = self._context["case"] if "case" in self._context else None
+        case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
         return case_result.end_hook(status)
 
     def start_step(self, name, fqn=None):
-        if self._context["case"] is None:
+        case_result: CaseResult = self._context.get("case")
+        if case_result is None:
             return None
-        case_result: CaseResult = self._context["case"]
         step_result = case_result.start_step(name, fqn)
         return step_result
 
     def end_step(self, status=None, exception=None):
-        if self._context["case"] is None:
+        case_result: CaseResult = self._context.get("case")
+        if case_result is None:
             return None
-        case_result: CaseResult = self._context["case"]
         return case_result.end_step(status, exception)
 
     def _add_system_attributes(self):
