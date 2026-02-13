@@ -52,7 +52,7 @@ def pytest_sessionstart(session):
 
 
 def pytest_sessionfinish(session):
-    if session.config.cb_reporter is None:
+    if getattr(session.config, 'cb_reporter', None) is None:
         return
     reporter: CbPyTestReporter = session.config.cb_reporter
     reporter.end_instance()
@@ -61,6 +61,8 @@ def pytest_sessionfinish(session):
 @pytest.fixture(scope="session")
 # instantiates ini file parses object
 def cbx(request) -> CbContext:
-    reporter = request.session.config.cb_reporter
+    reporter = getattr(request.session.config, 'cb_reporter', None)
+    if reporter is None:
+        return None
     context = CbContext.init(reporter)
     return context
