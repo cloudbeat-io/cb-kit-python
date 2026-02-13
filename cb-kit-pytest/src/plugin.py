@@ -45,7 +45,7 @@ def pytest_configure(config):
 
 
 def pytest_sessionstart(session):
-    if session.config.cb_reporter is None:
+    if getattr(session.config, 'cb_reporter', None) is None:
         return
     reporter: CbPyTestReporter = session.config.cb_reporter
     reporter.start_instance()
