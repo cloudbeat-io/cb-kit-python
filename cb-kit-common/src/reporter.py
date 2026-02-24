@@ -63,6 +63,7 @@ class CbTestReporter:
         self._context = ThreadContext()
         self._config = config
         self._api_client: Optional[RuntimeApiV2] = None
+
         if config.api_endpoint_url and config.api_token:
             self._api_client = RuntimeApiV2(config.api_endpoint_url, config.api_token)
 

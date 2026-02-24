@@ -21,15 +21,17 @@ def get_cb_config(config):
     cb_config = CbConfig()
     if os.environ.get("CB_AGENT") is not None and os.environ["CB_AGENT"] == "true":
         cb_config.is_ready = True
+
     cb_config.run_id = os.environ.get("CB_RUN_ID")
     cb_config.instance_id = os.environ.get("CB_INSTANCE_ID")
     cb_config.project_id = os.environ.get("CB_PROJECT_ID")
-    cb_config.api_endpoint_url = os.environ.get("CB_API_URL")
-    cb_config.api_token = os.environ.get("CB_API_KEY")
+    cb_config.api_endpoint_url = os.environ.get("CB_TEST_MONITOR_URL")
+    cb_config.api_token = os.environ.get("CB_TEST_MONITOR_TOKEN")
     cb_config.selenium_url = os.environ.get("CB_SELENIUM_URL")
     cb_config.appium_url = os.environ.get("CB_APPIUM_URL")
     if os.environ.get("CB_BROWSER_NAME") is not None:
         cb_config.capabilities["browserName"] = os.environ["CB_BROWSER_NAME"]
+
     return cb_config
 
 
