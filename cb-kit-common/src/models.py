@@ -36,6 +36,7 @@ class CbConfig:
     api_endpoint_url = attrib(default=None)
     selenium_url = attrib(default=None)
     appium_url = attrib(default=None)
+    framework = attrib(default=None)
     capabilities = attrib(default=defaultdict(OrderedDict))
     options = attrib(default=defaultdict(OrderedDict))
     metadata = attrib(default=defaultdict(OrderedDict))

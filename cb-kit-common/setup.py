@@ -15,6 +15,7 @@ classifiers = [
 
 install_requires = [
     "attrs>=16.0.0",
+    "requests>=2.20.0",
 ]
 
 

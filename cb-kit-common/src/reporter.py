@@ -1,9 +1,14 @@
 import threading
+import time
 from collections import OrderedDict, defaultdict
 import platform
+from typing import Optional
 
 from cloudbeat_common.models import TestResult, CbConfig, SuiteResult, CaseResult, StepResult
 from cloudbeat_common.json_util import to_json
+from cloudbeat_common.client import CaseStatusUpdateReq, RuntimeApiV2
+
+_LANGUAGE_NAME = "python"
 
 
 class ThreadContext:
@@ -57,6 +62,9 @@ class CbTestReporter:
     def __init__(self, config: CbConfig):
         self._context = ThreadContext()
         self._config = config
+        self._api_client: Optional[RuntimeApiV2] = None
+        if config.api_endpoint_url and config.api_token:
+            self._api_client = RuntimeApiV2(config.api_endpoint_url, config.api_token)
 
     @classmethod
     def get_instance(cls) -> 'CbTestReporter':
@@ -111,14 +119,50 @@ class CbTestReporter:
         case_result.start(name, fqn)
         suite_result.add_case(case_result)
         self._context["case"] = case_result
+        if self._api_client:
+            caps = None
+            if case_result.context and case_result.context.get("browserName"):
+                caps = {"browserName": case_result.context["browserName"]}
+            self._api_client.update_case_status(CaseStatusUpdateReq(
+                timestamp=int(time.time() * 1000),
+                run_id=self._config.run_id,
+                instance_id=self._config.instance_id,
+                id=case_result.id,
+                fqn=case_result.fqn,
+                parent_fqn=suite_result.fqn,
+                parent_id=suite_result.id,
+                name=case_result.name,
+                start_time=case_result.start_time,
+                run_status="Running",
+                framework=self._config.framework,
+                language=_LANGUAGE_NAME,
+                capabilities=caps,
+            ))
         return case_result
 
     def end_case(self, status=None, failure=None):
         case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
-        # TODO: end started steps of the case
         case_result.end(status, failure)
+        if self._api_client:
+            suite_result: SuiteResult = self._context.get("suite")
+            self._api_client.update_case_status(CaseStatusUpdateReq(
+                timestamp=int(time.time() * 1000),
+                run_id=self._config.run_id,
+                instance_id=self._config.instance_id,
+                id=case_result.id,
+                fqn=case_result.fqn,
+                parent_fqn=suite_result.fqn if suite_result else None,
+                parent_id=suite_result.id if suite_result else None,
+                name=case_result.name,
+                start_time=case_result.start_time,
+                end_time=case_result.end_time,
+                run_status="Finished",
+                test_status=case_result.status,
+                framework=self._config.framework,
+                language=_LANGUAGE_NAME,
+            ))
         return case_result
 
     def start_case_hook(self, name):
