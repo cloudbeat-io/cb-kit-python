@@ -51,4 +51,4 @@ class CbPyTestReporter(CbTestReporter):
     def end_call(self, item: Item, result: TestReport):
         status = calculate_status(result)
         failure = get_failure_from_test_report(result)
-        CbTestReporter.end_case(self, status, failure)
+        CbTestReporter.end_case(self, status, failure, skip_api=True)

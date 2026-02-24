@@ -90,7 +90,7 @@ class TestResult:
 
 @attrs
 class TestableResultBase:
-    id = attrib(default=str(uuid.uuid4()))
+    id = attrib(default=Factory(lambda: str(uuid.uuid4())))
     name = attrib(default=None)
     display_name = attrib(default=None)
     description = attrib(default=None)

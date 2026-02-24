@@ -141,12 +141,12 @@ class CbTestReporter:
             ))
         return case_result
 
-    def end_case(self, status=None, failure=None):
+    def end_case(self, status=None, failure=None, skip_api=False):
         case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
         case_result.end(status, failure)
-        if self._api_client:
+        if self._api_client and not skip_api:
             suite_result: SuiteResult = self._context.get("suite")
             self._api_client.update_case_status(CaseStatusUpdateReq(
                 timestamp=int(time.time() * 1000),
