@@ -6,17 +6,6 @@ from cloudbeat_pytest.pytest_reporter import CbPyTestReporter
 from cloudbeat_pytest.context import CbContext
 
 
-def pytest_addoption(parser):
-    group = parser.getgroup("cloudbeat")
-    group.addoption(
-        "--name",
-        action="store",
-        dest="name",
-        default="World",
-        help='Default "name" for hello().',
-    )
-
-
 def get_cb_config(config):
     cb_config = CbConfig()
     if os.environ.get("CB_AGENT") is not None and os.environ["CB_AGENT"] == "true":
