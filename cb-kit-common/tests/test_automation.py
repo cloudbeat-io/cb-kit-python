@@ -79,3 +79,15 @@ def test_case_is_stamped_once_and_written_to_json(reporter):
 def test_case_without_driver_has_no_stamp(reporter):
     reporter.end_case()
     assert "automation" not in reporter._result.suites[0].cases[0].context
+
+
+def test_quitting_driver_stamps_the_running_test_then_is_forgotten(reporter):
+    driver = FakeDriver({"platformName": "iOS", "appium:deviceName": "iPhone 16"})
+    reporter.set_webdriver(FakeEventFiring(driver))
+    reporter.webdriver_quitting(driver)          # e.g. quit in the test body or a fixture before the test ends
+    reporter.end_case()
+    first = reporter._result.suites[0].cases[0]
+    assert first.context["automation"]["engine"] == "appium"
+    reporter.start_case("api test", "suite.api")  # a later test that uses no driver
+    reporter.end_case()
+    assert "automation" not in reporter._result.suites[0].cases[1].context

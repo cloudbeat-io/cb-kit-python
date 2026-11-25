@@ -52,16 +52,18 @@ to send for them is listed under "Data CloudBeat needs from the kit".
 
 ## Mobile (Appium)
 
-- [ ] Appium support — `CbSeleniumWrapper` wraps any Selenium-compatible driver, so Appium drivers get steps and screenshots, and the engine stamp recognises them (driver class or `platformName` / `automationName` capabilities). Not done: Appium exceptions (`appium.common.exceptions`) are reported as GENERAL_ERROR instead of a driver error type, and there is no Appium-specific documentation or test.
+- [ ] Appium support — `CbSeleniumWrapper` wraps any Selenium-compatible driver, so Appium drivers get steps and screenshots, and the engine stamp recognises them (driver class or `platformName` / `automationName` capabilities). The Appium client's own exceptions (`appium.common.exceptions`) are reported as `APPIUM_ERROR` with the exception name in `subType`. Not done: Appium-specific documentation and a test against a real Appium server.
 
 ## Data CloudBeat needs from the kit (Test Health)
 
 - [x] Automation engine per test — context `automation` (see above), so engine rules (Appium vs Selenium) apply to pytest projects. _`feature/console-capture`_
-- [x] Re-run count per test — `reRunCount`, so "passed on retry" counts as flaky. _`feature/console-capture`_ (The .NET kit sends it too; the Java kit does not yet.)
-- [ ] Failure location — file and line of the failing test code (the .NET kit sends it), for grouping errors and for code-level optimization suggestions.
+- [x] Re-run count per test — `reRunCount`, so "passed on retry" counts as flaky. _`feature/console-capture`_ (The .NET kit sends it too; the Java kit since branch `feature/automation-engine`.)
+- [x] Failure location — `failure.location` is the file and line of the deepest frame in the project's own code (not site-packages).
+- [x] Field names the server reads — the failure's `subType` / `isFatal` and the case's `displayName` were written as `sub_type` / `is_fatal` / `display_name`, which the server ignores: for a Selenium error the exception name (only in the subtype) never reached CloudBeat, so its rules could not match pytest failures. Now camelCase. _`feature/console-capture`_
 
 ## Known limitations
 
-- The reporter keeps the last wrapped driver per thread, so in a mixed suite a later test that uses no driver (e.g. an API test) still gets the previous driver's `automation` stamp.
-- `cb-kit-pytest/tests/test_plugin.py` is a leftover template (`hello` fixture, `--name` option, `cbx.pw.hello`): 3 of its tests fail on the committed code too. Replace it with real plugin tests.
+- A driver that is never quit (shared through a session fixture) keeps stamping later tests of its thread, including ones that do not use it. A driver that quits stamps the running test and is then forgotten.
+- `cbx.pw` (Playwright) is a stub.
 - `cb-kit-playwright` is a stub (`hello(world)`).
+- Plugin tests (`cb-kit-pytest/tests`) run pytest end to end in a subprocess (pytester); the old template tests were replaced.

@@ -46,7 +46,7 @@ def _case_result_to_json(c: CaseResult):
     return {
         "id": c.id,
         "name": c.name,
-        "display_name": c.display_name,
+        "displayName": c.display_name,
         "description": c.description,
         "fqn": c.fqn,
         "startTime": c.start_time,
@@ -98,11 +98,11 @@ def _failure_result_to_json(f: FailureResult):
         return None
     return {
         "type": f.type,
-        "sub_type": f.sub_type,
+        "subType": f.sub_type,
         "message": f.message,
         "stacktrace": f.stacktrace,
         "location": f.location,
-        "is_fatal": f.is_fatal
+        "isFatal": f.is_fatal
     }
 
 

@@ -146,12 +146,22 @@ class CbTestReporter:
         """The WebDriver the current thread's tests drive (set by the Selenium wrapper)."""
         self._context["webdriver"] = driver
 
-    def _add_automation_info(self, case_result: CaseResult):
+    def webdriver_quitting(self, driver):
+        """The driver is about to quit: stamp the running test with its engine now (its capabilities are still
+        known), then forget it, so later tests of this thread that use no driver are not stamped with it."""
+        case_result: CaseResult = self._context.get("case")
+        if case_result is not None and case_result.end_time is None:
+            self._add_automation_info(case_result, driver)
+        current = self._context.get("webdriver")
+        if current is driver or getattr(current, "wrapped_driver", None) is driver:
+            self._context["webdriver"] = None
+
+    def _add_automation_info(self, case_result: CaseResult, driver=None):
         """Records which engine the test drove (Appium or Selenium, platform, device): context entry "automation"."""
         try:
             if "automation" in case_result.context:
                 return
-            info = describe_driver(self._context.get("webdriver"))
+            info = describe_driver(driver if driver is not None else self._context.get("webdriver"))
             if info is not None:
                 case_result.context["automation"] = info
         except Exception:
