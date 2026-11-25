@@ -10,4 +10,6 @@ class CbSeleniumWrapper:
 
     def wrap(self, driver: webdriver):
         listener = CbWebDriverListener(self._reporter)
+        if self._reporter is not None and hasattr(self._reporter, "set_webdriver"):
+            self._reporter.set_webdriver(driver)
         return EventFiringWebDriver(driver, listener)

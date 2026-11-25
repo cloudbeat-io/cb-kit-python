@@ -1,6 +1,6 @@
 import json
 
-from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult, FailureResult
+from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult, FailureResult, LogMessage
 
 
 def to_json(result: TestResult):
@@ -46,7 +46,7 @@ def _case_result_to_json(c: CaseResult):
     return {
         "id": c.id,
         "name": c.name,
-        "display_name": c.display_name,
+        "displayName": c.display_name,
         "description": c.description,
         "fqn": c.fqn,
         "startTime": c.start_time,
@@ -55,7 +55,9 @@ def _case_result_to_json(c: CaseResult):
         "status": c.status,
         "context": c.context,
         "arguments": c.arguments,
+        "reRunCount": c.re_run_count,
         "failure": _failure_result_to_json(c.failure),
+        "logs": list(map(_log_message_to_json, c.logs)),
         "steps": list(map(lambda s: _step_result_to_json(s), c.steps)),
         "hooks": list(map(lambda s: _step_result_to_json(s), c.hooks))
     }
@@ -72,9 +74,23 @@ def _step_result_to_json(s: StepResult):
         "endTime": s.end_time,
         "duration": s.duration,
         "status": s.status,
+        "arguments": s.arguments,
+        "logs": list(map(_log_message_to_json, s.logs)),
         "screenShot": s.screenshot,
         "failure": _failure_result_to_json(s.failure),
         "steps": list(map(lambda sub_step: _step_result_to_json(sub_step), s.steps))
+    }
+
+
+def _log_message_to_json(log):
+    if not isinstance(log, LogMessage):
+        return None
+    return {
+        "id": log.id,
+        "message": log.message,
+        "level": log.level,
+        "time": log.time,
+        "src": log.src,
     }
 
 def _failure_result_to_json(f: FailureResult):
@@ -82,11 +98,11 @@ def _failure_result_to_json(f: FailureResult):
         return None
     return {
         "type": f.type,
-        "sub_type": f.sub_type,
+        "subType": f.sub_type,
         "message": f.message,
         "stacktrace": f.stacktrace,
         "location": f.location,
-        "is_fatal": f.is_fatal
+        "isFatal": f.is_fatal
     }
 
 

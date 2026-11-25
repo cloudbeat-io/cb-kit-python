@@ -4,8 +4,9 @@ from collections import OrderedDict, defaultdict
 import platform
 from typing import Optional
 
-from cloudbeat_common.models import TestResult, CbConfig, SuiteResult, CaseResult, StepResult
+from cloudbeat_common.models import TestResult, CbConfig, SuiteResult, CaseResult, StepResult, LogMessage
 from cloudbeat_common.json_util import to_json
+from cloudbeat_common.automation import describe_driver
 from cloudbeat_common.client import CaseStatusUpdateReq, RuntimeApiV2
 
 _LANGUAGE_NAME = "python"
@@ -141,10 +142,36 @@ class CbTestReporter:
             ))
         return case_result
 
+    def set_webdriver(self, driver):
+        """The WebDriver the current thread's tests drive (set by the Selenium wrapper)."""
+        self._context["webdriver"] = driver
+
+    def webdriver_quitting(self, driver):
+        """The driver is about to quit: stamp the running test with its engine now (its capabilities are still
+        known), then forget it, so later tests of this thread that use no driver are not stamped with it."""
+        case_result: CaseResult = self._context.get("case")
+        if case_result is not None and case_result.end_time is None:
+            self._add_automation_info(case_result, driver)
+        current = self._context.get("webdriver")
+        if current is driver or getattr(current, "wrapped_driver", None) is driver:
+            self._context["webdriver"] = None
+
+    def _add_automation_info(self, case_result: CaseResult, driver=None):
+        """Records which engine the test drove (Appium or Selenium, platform, device): context entry "automation"."""
+        try:
+            if "automation" in case_result.context:
+                return
+            info = describe_driver(driver if driver is not None else self._context.get("webdriver"))
+            if info is not None:
+                case_result.context["automation"] = info
+        except Exception:
+            pass
+
     def end_case(self, status=None, failure=None, skip_api=False):
         case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
+        self._add_automation_info(case_result)
         case_result.end(status, failure)
         if self._api_client and not skip_api:
             suite_result: SuiteResult = self._context.get("suite")
@@ -178,18 +205,59 @@ class CbTestReporter:
             return None
         return case_result.end_hook(status)
 
-    def start_step(self, name, fqn=None):
+    def start_step(self, name, fqn=None, arguments=None):
         case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
-        step_result = case_result.start_step(name, fqn)
-        return step_result
+        return case_result.start_step(name, fqn, arguments)
 
     def end_step(self, status=None, exception=None):
         case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
         return case_result.end_step(status, exception)
+
+    def add_log(self, message, level='info', src='user'):
+        """Append a log entry to the active step (if any) or the active case."""
+        case_result: CaseResult = self._context.get("case")
+        if case_result is None:
+            return
+        log = LogMessage(message=message, level=level, src=src)
+        if case_result._started_steps_stack:
+            case_result._started_steps_stack[-1].logs.append(log)
+        else:
+            case_result.logs.append(log)
+
+    def start_console_capture(self):
+        """Install stdout/stderr wrappers and a logging handler to capture console output."""
+        import sys
+        from cloudbeat_common.cb import CbLoggingHandler, CbStreamWrapper
+
+        if getattr(self, '_capturing', False):
+            return
+        self._cb_log_handler = CbLoggingHandler()
+        import logging
+        logging.root.addHandler(self._cb_log_handler)
+        self._orig_stdout = sys.stdout
+        self._orig_stderr = sys.stderr
+        sys.stdout = CbStreamWrapper(sys.stdout, 'info')
+        sys.stderr = CbStreamWrapper(sys.stderr, 'error')
+        self._capturing = True
+
+    def stop_console_capture(self):
+        """Remove stdout/stderr wrappers and the logging handler."""
+        import sys
+        import logging
+
+        if not getattr(self, '_capturing', False):
+            return
+        logging.root.removeHandler(self._cb_log_handler)
+        self._cb_log_handler = None
+        sys.stdout = self._orig_stdout
+        sys.stderr = self._orig_stderr
+        self._orig_stdout = None
+        self._orig_stderr = None
+        self._capturing = False
 
     def _add_system_attributes(self):
         self._result.test_attributes["agent.hostname"] = platform.node()

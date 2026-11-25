@@ -26,6 +26,15 @@ class StepType:
 
 
 @attrs
+class LogMessage:
+    id      = attrib(default=Factory(lambda: str(uuid.uuid4())))
+    message = attrib(default=None)
+    level   = attrib(default='info')   # 'info' | 'warn' | 'error' | 'debug'
+    time    = attrib(default=Factory(lambda: int(time.time() * 1000)))
+    src     = attrib(default='user')   # 'user' | 'system'
+
+
+@attrs
 class CbConfig:
     is_ready = attrib(default=False)
     run_id = attrib(default=None)
@@ -152,6 +161,9 @@ class StepResult(TestableResultBase):
 class CaseResult(TestableResultBase):
     context = attrib(default=Factory(lambda: defaultdict(OrderedDict)))
     steps = attrib(default=Factory(list))
+    logs = attrib(default=Factory(list))
+    # how many times the test was re-run before this (last) attempt, e.g. by pytest-rerunfailures; None = not re-run
+    re_run_count = attrib(default=None)
     _started_steps_stack: List[StepResult] = attrib(default=Factory(list))
 
     def start(self, name, fqn=None):
@@ -175,6 +187,19 @@ class CaseResult(TestableResultBase):
         if failure is not None:
             self.failure = failure
 
+    def restart_for_rerun(self, re_run_count, initial_status):
+        """A new attempt of the same test: the result keeps only the last attempt, plus how many re-runs it took."""
+        self.re_run_count = re_run_count
+        self.status = initial_status
+        self.failure = None
+        self.steps = []
+        self.hooks = []
+        self.logs = []
+        self._started_steps_stack = []
+        self.start_time = int(time.time() * 1000)
+        self.end_time = None
+        self.duration = None
+
     def start_hook(self, name):
         hook_result = StepResult()
         hook_result.start(name)
@@ -196,12 +221,11 @@ class CaseResult(TestableResultBase):
         last_hook.end(status)
         return last_hook
 
-    def start_step(self, name, fqn=None):
-        # Check if there is a started step
-        parent_step = self._started_steps_stack[len(self._started_steps_stack) - 1] \
-            if len(self._started_steps_stack) > 0 else None
+    def start_step(self, name, fqn=None, arguments=None):
+        parent_step = self._started_steps_stack[-1] if self._started_steps_stack else None
         step_result = StepResult()
         step_result.start(name, fqn)
+        step_result.arguments = arguments or []
         if parent_step is None:
             self.steps.append(step_result)
         else:

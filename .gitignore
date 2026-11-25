@@ -154,3 +154,6 @@ cython_debug/
 
 # PyCharm
 .idea/
+# CloudBeat results written by local test runs
+.CB_TEST_RESULTS.json
+CB_RESULT.json

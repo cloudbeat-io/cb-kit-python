@@ -23,6 +23,13 @@ class CbWebDriverListener(AbstractEventListener):
             self._pending_find = None
             self._pending_find_step = None
 
+    def before_quit(self, driver) -> None:
+        if self._reporter is not None and hasattr(self._reporter, "webdriver_quitting"):
+            try:
+                self._reporter.webdriver_quitting(driver)
+            except Exception:
+                pass
+
     def on_exception(self, exception, driver):
         # If this is a NoSuchElementException during a find, keep the step open —
         # WebDriverWait will likely retry and we don't want a separate step per attempt

@@ -65,6 +65,10 @@ def get_failure_from_test_report(result: TestReport):
             if exc_name.startswith('selenium.common.exceptions.'):
                 failure.sub_type = exc_name[len('selenium.common.exceptions.'):]
                 failure.type = 'SELENIUM_ERROR'
+            elif exc_name.startswith('appium.common.exceptions.'):
+                # the Appium client's own exceptions (it raises Selenium's for everything else)
+                failure.sub_type = exc_name[len('appium.common.exceptions.'):]
+                failure.type = 'APPIUM_ERROR'
             elif 'AssertionError' in exc_name:
                 failure.sub_type = exc_name
                 failure.type = 'ASSERT_ERROR'

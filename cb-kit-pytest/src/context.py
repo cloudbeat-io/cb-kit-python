@@ -35,7 +35,7 @@ class CbContext:
                 pw_wrapper_class = getattr(pw_module, "CbPlaywrightWrapper")
                 CbContext.instance.__setattr__("pw", pw_wrapper_class(reporter))
             if "cloudbeat_selenium" in sys.modules:
-                se_module = importlib.import_module("wrapper", "cloudbeat_selenium")
+                se_module = importlib.import_module(".wrapper", "cloudbeat_selenium")
                 se_wrapper_class = getattr(se_module, "CbSeleniumWrapper")
                 CbContext.instance.__setattr__("se", se_wrapper_class(reporter))
         return CbContext.instance
