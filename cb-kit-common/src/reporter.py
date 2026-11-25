@@ -6,6 +6,7 @@ from typing import Optional
 
 from cloudbeat_common.models import TestResult, CbConfig, SuiteResult, CaseResult, StepResult, LogMessage
 from cloudbeat_common.json_util import to_json
+from cloudbeat_common.automation import describe_driver
 from cloudbeat_common.client import CaseStatusUpdateReq, RuntimeApiV2
 
 _LANGUAGE_NAME = "python"
@@ -141,10 +142,26 @@ class CbTestReporter:
             ))
         return case_result
 
+    def set_webdriver(self, driver):
+        """The WebDriver the current thread's tests drive (set by the Selenium wrapper)."""
+        self._context["webdriver"] = driver
+
+    def _add_automation_info(self, case_result: CaseResult):
+        """Records which engine the test drove (Appium or Selenium, platform, device): context entry "automation"."""
+        try:
+            if "automation" in case_result.context:
+                return
+            info = describe_driver(self._context.get("webdriver"))
+            if info is not None:
+                case_result.context["automation"] = info
+        except Exception:
+            pass
+
     def end_case(self, status=None, failure=None, skip_api=False):
         case_result: CaseResult = self._context.get("case")
         if case_result is None:
             return None
+        self._add_automation_info(case_result)
         case_result.end(status, failure)
         if self._api_client and not skip_api:
             suite_result: SuiteResult = self._context.get("suite")
