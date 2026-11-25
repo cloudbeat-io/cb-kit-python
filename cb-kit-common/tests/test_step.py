@@ -206,3 +206,180 @@ class TestCbStepContext:
         assert case.steps[0].name == "Decorator step"
         assert len(case.steps[0].steps) == 1
         assert case.steps[0].steps[0].name == "Context sub-step"
+
+
+class TestCbStepArgumentCapture:
+    """@cb.step captures function arguments in step.arguments."""
+
+    def test_decorator_without_name_captures_args(self, reporter):
+        @cb.step
+        def login(username, password):
+            pass
+
+        login("admin", "secret")
+        step = reporter._context["case"].steps[0]
+        assert {"name": "username", "value": repr("admin")} in step.arguments
+        assert {"name": "password", "value": repr("secret")} in step.arguments
+
+    def test_decorator_with_name_captures_args(self, reporter):
+        @cb.step("Login as {username}")
+        def login(username, password):
+            pass
+
+        login("admin", "secret")
+        step = reporter._context["case"].steps[0]
+        assert step.name == "Login as admin"
+        assert {"name": "username", "value": repr("admin")} in step.arguments
+        assert {"name": "password", "value": repr("secret")} in step.arguments
+
+    def test_self_excluded_from_arguments(self, reporter):
+        class MyPage:
+            @cb.step("Click {target}")
+            def click(self, target):
+                pass
+
+        MyPage().click("button")
+        step = reporter._context["case"].steps[0]
+        names = [a["name"] for a in step.arguments]
+        assert "self" not in names
+        assert "target" in names
+
+    def test_varargs_excluded_from_arguments(self, reporter):
+        @cb.step("Do something")
+        def action(*args, **kwargs):
+            pass
+
+        action(1, 2, key="val")
+        step = reporter._context["case"].steps[0]
+        assert step.arguments == []
+
+    def test_no_params_gives_empty_arguments(self, reporter):
+        @cb.step("No params")
+        def action():
+            pass
+
+        action()
+        assert reporter._context["case"].steps[0].arguments == []
+
+    def test_step_context_has_empty_arguments(self, reporter):
+        with cb.step_context("Block step"):
+            pass
+
+        assert reporter._context["case"].steps[0].arguments == []
+
+    def test_bad_repr_falls_back_to_unknown(self, reporter):
+        class Unrepresentable:
+            def __repr__(self):
+                raise RuntimeError("cannot repr")
+
+        @cb.step("Step with bad arg")
+        def action(val):
+            pass
+
+        action(Unrepresentable())
+        step = reporter._context["case"].steps[0]
+        assert step.arguments[0] == {"name": "val", "value": "<unknown>"}
+
+    def test_arguments_serialized_in_json(self, reporter):
+        import json
+        from cloudbeat_common.json_util import to_json
+
+        @cb.step("Login as {username}")
+        def login(username):
+            pass
+
+        login("admin")
+        reporter.end_case()
+        reporter.end_suite()
+        reporter.end_instance()
+
+        with open(".CB_TEST_RESULTS.json") as f:
+            data = json.load(f)
+
+        step_json = data["suites"][0]["cases"][0]["steps"][0]
+        assert step_json["arguments"] == [{"name": "username", "value": repr("admin")}]
+
+
+class TestConsoleCapture:
+    """CbTestReporter captures print() and logging output into case/step logs."""
+
+    def test_print_goes_to_case_logs(self, reporter):
+        reporter.start_console_capture()
+        print("hello from test")
+        reporter.stop_console_capture()
+        case = reporter._context["case"]
+        messages = [log.message for log in case.logs]
+        assert "hello from test" in messages
+
+    def test_logging_goes_to_case_logs(self, reporter):
+        import logging
+        logger = logging.getLogger("test_logger")
+        logger.setLevel(logging.DEBUG)
+        reporter.start_console_capture()
+        logger.info("info log message")
+        reporter.stop_console_capture()
+        case = reporter._context["case"]
+        messages = [log.message for log in case.logs]
+        assert "info log message" in messages
+
+    def test_log_level_mapped_correctly(self, reporter):
+        import logging
+        reporter.start_console_capture()
+        logging.getLogger("test_logger").warning("warn msg")
+        logging.getLogger("test_logger").error("error msg")
+        reporter.stop_console_capture()
+        case = reporter._context["case"]
+        by_msg = {log.message: log.level for log in case.logs}
+        assert by_msg.get("warn msg") == "warn"
+        assert by_msg.get("error msg") == "error"
+
+    def test_stderr_captured_as_error(self, reporter):
+        import sys
+        reporter.start_console_capture()
+        print("stderr line", file=sys.stderr)
+        reporter.stop_console_capture()
+        case = reporter._context["case"]
+        error_logs = [log for log in case.logs if log.level == "error"]
+        assert any("stderr line" in log.message for log in error_logs)
+
+    def test_print_inside_step_goes_to_step_logs(self, reporter):
+        reporter.start_console_capture()
+        with cb.step_context("My step"):
+            print("inside step")
+        reporter.stop_console_capture()
+        case = reporter._context["case"]
+        assert len(case.steps) == 1
+        step_messages = [log.message for log in case.steps[0].logs]
+        assert "inside step" in step_messages
+        # should NOT appear in case-level logs
+        case_messages = [log.message for log in case.logs]
+        assert "inside step" not in case_messages
+
+    def test_stop_is_idempotent(self, reporter):
+        reporter.start_console_capture()
+        reporter.stop_console_capture()
+        reporter.stop_console_capture()  # second call must not raise
+
+    def test_start_is_idempotent(self, reporter):
+        reporter.start_console_capture()
+        reporter.start_console_capture()  # second call must not wrap twice
+        print("single capture")
+        reporter.stop_console_capture()
+        case = reporter._context["case"]
+        messages = [log.message for log in case.logs]
+        assert messages.count("single capture") == 1
+
+    def test_logs_serialized_in_json(self, reporter):
+        import json
+        reporter.start_console_capture()
+        print("serialized log")
+        reporter.stop_console_capture()
+        reporter.end_case()
+        reporter.end_suite()
+        reporter.end_instance()
+        with open(".CB_TEST_RESULTS.json") as f:
+            data = json.load(f)
+        case_json = data["suites"][0]["cases"][0]
+        assert "logs" in case_json
+        messages = [entry["message"] for entry in case_json["logs"]]
+        assert "serialized log" in messages

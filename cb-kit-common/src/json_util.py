@@ -1,6 +1,6 @@
 import json
 
-from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult, FailureResult
+from cloudbeat_common.models import TestResult, SuiteResult, CaseResult, StepResult, FailureResult, LogMessage
 
 
 def to_json(result: TestResult):
@@ -56,6 +56,7 @@ def _case_result_to_json(c: CaseResult):
         "context": c.context,
         "arguments": c.arguments,
         "failure": _failure_result_to_json(c.failure),
+        "logs": list(map(_log_message_to_json, c.logs)),
         "steps": list(map(lambda s: _step_result_to_json(s), c.steps)),
         "hooks": list(map(lambda s: _step_result_to_json(s), c.hooks))
     }
@@ -72,9 +73,23 @@ def _step_result_to_json(s: StepResult):
         "endTime": s.end_time,
         "duration": s.duration,
         "status": s.status,
+        "arguments": s.arguments,
+        "logs": list(map(_log_message_to_json, s.logs)),
         "screenShot": s.screenshot,
         "failure": _failure_result_to_json(s.failure),
         "steps": list(map(lambda sub_step: _step_result_to_json(sub_step), s.steps))
+    }
+
+
+def _log_message_to_json(log):
+    if not isinstance(log, LogMessage):
+        return None
+    return {
+        "id": log.id,
+        "message": log.message,
+        "level": log.level,
+        "time": log.time,
+        "src": log.src,
     }
 
 def _failure_result_to_json(f: FailureResult):

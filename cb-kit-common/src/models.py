@@ -26,6 +26,15 @@ class StepType:
 
 
 @attrs
+class LogMessage:
+    id      = attrib(default=Factory(lambda: str(uuid.uuid4())))
+    message = attrib(default=None)
+    level   = attrib(default='info')   # 'info' | 'warn' | 'error' | 'debug'
+    time    = attrib(default=Factory(lambda: int(time.time() * 1000)))
+    src     = attrib(default='user')   # 'user' | 'system'
+
+
+@attrs
 class CbConfig:
     is_ready = attrib(default=False)
     run_id = attrib(default=None)
@@ -152,6 +161,7 @@ class StepResult(TestableResultBase):
 class CaseResult(TestableResultBase):
     context = attrib(default=Factory(lambda: defaultdict(OrderedDict)))
     steps = attrib(default=Factory(list))
+    logs = attrib(default=Factory(list))
     _started_steps_stack: List[StepResult] = attrib(default=Factory(list))
 
     def start(self, name, fqn=None):
@@ -196,12 +206,11 @@ class CaseResult(TestableResultBase):
         last_hook.end(status)
         return last_hook
 
-    def start_step(self, name, fqn=None):
-        # Check if there is a started step
-        parent_step = self._started_steps_stack[len(self._started_steps_stack) - 1] \
-            if len(self._started_steps_stack) > 0 else None
+    def start_step(self, name, fqn=None, arguments=None):
+        parent_step = self._started_steps_stack[-1] if self._started_steps_stack else None
         step_result = StepResult()
         step_result.start(name, fqn)
+        step_result.arguments = arguments or []
         if parent_step is None:
             self.steps.append(step_result)
         else:

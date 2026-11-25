@@ -22,8 +22,10 @@ class CbPyTestReporter(CbTestReporter):
         test_parameters = get_test_parameters(item)
         if test_parameters is not None and len(test_parameters) > 0:
             case_result.add_parameters(test_parameters)
+        self.start_console_capture()
 
     def end_protocol(self, item: Item):
+        self.stop_console_capture()
         # Call end_case again (previously called in end_call),
         # so end_time will include teardown hook
         CbTestReporter.end_case(self)
