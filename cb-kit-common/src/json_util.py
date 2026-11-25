@@ -55,6 +55,7 @@ def _case_result_to_json(c: CaseResult):
         "status": c.status,
         "context": c.context,
         "arguments": c.arguments,
+        "reRunCount": c.re_run_count,
         "failure": _failure_result_to_json(c.failure),
         "logs": list(map(_log_message_to_json, c.logs)),
         "steps": list(map(lambda s: _step_result_to_json(s), c.steps)),

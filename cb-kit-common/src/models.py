@@ -162,6 +162,8 @@ class CaseResult(TestableResultBase):
     context = attrib(default=Factory(lambda: defaultdict(OrderedDict)))
     steps = attrib(default=Factory(list))
     logs = attrib(default=Factory(list))
+    # how many times the test was re-run before this (last) attempt, e.g. by pytest-rerunfailures; None = not re-run
+    re_run_count = attrib(default=None)
     _started_steps_stack: List[StepResult] = attrib(default=Factory(list))
 
     def start(self, name, fqn=None):
@@ -184,6 +186,19 @@ class CaseResult(TestableResultBase):
         # Do not overwrite failure if already set (e.g. by end_call)
         if failure is not None:
             self.failure = failure
+
+    def restart_for_rerun(self, re_run_count, initial_status):
+        """A new attempt of the same test: the result keeps only the last attempt, plus how many re-runs it took."""
+        self.re_run_count = re_run_count
+        self.status = initial_status
+        self.failure = None
+        self.steps = []
+        self.hooks = []
+        self.logs = []
+        self._started_steps_stack = []
+        self.start_time = int(time.time() * 1000)
+        self.end_time = None
+        self.duration = None
 
     def start_hook(self, name):
         hook_result = StepResult()

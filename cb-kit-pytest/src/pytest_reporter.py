@@ -18,6 +18,7 @@ class CbPyTestReporter(CbTestReporter):
         # pytest_runtest_call hook won't be called and we won't get any indication
         # if the test has been skipped
         case_result.status = TestStatus.SKIPPED
+        self._context["captured_sections"] = 0
         case_result.description = get_description(item)
         test_parameters = get_test_parameters(item)
         if test_parameters is not None and len(test_parameters) > 0:
@@ -39,18 +40,52 @@ class CbPyTestReporter(CbTestReporter):
         suite_result.end()
 
     def start_setup(self, item: Item):
+        # pytest-rerunfailures runs setup / call / teardown again in the same protocol and counts the attempts in
+        # item.execution_count (1 = first run): a new attempt replaces the failed one, so a test that passes on a
+        # re-run is reported as passed, with reRunCount = the number of re-runs (CloudBeat counts it as flaky)
+        attempt = getattr(item, "execution_count", 1)
+        case_result = self._context.get("case")
+        if case_result is not None and isinstance(attempt, int) and attempt > 1:
+            case_result.restart_for_rerun(attempt - 1, TestStatus.SKIPPED)
         CbTestReporter.start_case_hook(self, "setup")
 
     def end_setup(self, item: Item, result: TestReport):
+        self._add_captured_output(result)
         CbTestReporter.end_case_hook(self)
 
     def start_teardown(self, item: Item):
         CbTestReporter.start_case_hook(self, "teardown")
 
     def end_teardown(self, item: Item, result: TestReport):
+        self._add_captured_output(result)
         CbTestReporter.end_case_hook(self)
 
+    def _add_captured_output(self, result: TestReport):
+        # While pytest captures output (the default, unless -s), it swaps sys.stdout / sys.stderr for its own
+        # buffers in every phase, so the console wrapper sees nothing: take what pytest captured instead. A report
+        # repeats the sections of the item's earlier phases (and, with pytest-rerunfailures, of earlier attempts),
+        # so only the sections not seen yet for this test are added. With -s pytest captures nothing here and the
+        # wrapper (start_console_capture) gets the output instead.
+        try:
+            sections = list(result.sections or [])
+            seen = self._context.get("captured_sections") or 0
+            for title, content in sections[seen:]:
+                if title.startswith("Captured stdout"):
+                    level = 'info'
+                elif title.startswith("Captured stderr"):
+                    level = 'error'
+                else:
+                    continue    # "Captured log …": logging records arrive through the logging handler
+                for line in (content or '').splitlines():
+                    line = line.rstrip()
+                    if line:
+                        self.add_log(line, level, 'user')
+            self._context["captured_sections"] = len(sections)
+        except Exception:
+            pass
+
     def end_call(self, item: Item, result: TestReport):
+        self._add_captured_output(result)
         status = calculate_status(result)
         failure = get_failure_from_test_report(result)
         CbTestReporter.end_case(self, status, failure, skip_api=True)
